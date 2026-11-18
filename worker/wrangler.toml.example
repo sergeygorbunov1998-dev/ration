@@ -1,0 +1,21 @@
+name = "ration-plus-api"
+main = "index.js"
+compatibility_date = "2026-11-18"
+workers_dev = true
+
+# Public URL origin only; never store passwords or API tokens in this file.
+[vars]
+ALLOWED_ORIGIN = "https://YOUR-GITHUB-USERNAME.github.io"
+OPENAI_MODEL = "gpt-5-mini"
+
+# After `npx wrangler kv namespace create PROGRESS`, add the generated namespace id:
+# [[kv_namespaces]]
+# binding = "PROGRESS"
+# id = "YOUR_KV_NAMESPACE_ID"
+
+# Add secrets separately with `npx wrangler secret put SECRET_NAME`:
+# APP_ACCESS_KEY
+# WIDGET_READ_KEY
+# OPENAI_API_KEY
+# TELEGRAM_BOT_TOKEN
+# TELEGRAM_CHAT_ID

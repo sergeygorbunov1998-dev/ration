@@ -1,0 +1,17 @@
+import assert from 'node:assert/strict';
+import app from '../worker/index.js';
+const records=new Map();
+const env={APP_ACCESS_KEY:'secret-test',WIDGET_READ_KEY:'widget-test',ALLOWED_ORIGIN:'https://my-domain.github.io',OPENAI_API_KEY:'openai-test',TELEGRAM_BOT_TOKEN:'test-bot',TELEGRAM_CHAT_ID:'@some_test_channel',PROGRESS:{get:async k=>records.get(k)||null,put:async(k,v)=>records.set(k,v)}};
+const headers={Authorization:'Bearer secret-test',Origin:'https://my-domain.github.io','Content-Type':'application/json'};
+let r=await app.fetch(new Request('https://server.workers.dev/api/health',{headers}),env);assert.equal(r.status,200);assert.equal((await r.json()).ok,true);
+r=await app.fetch(new Request('https://server.workers.dev/api/health',{headers:{Origin:'https://attacker.example'}}),env);assert.equal(r.status,403);
+let progress={profileId:'123456789012',date:'2026-11-18',name:'me',cal:1800,protein:130,fat:57,carbs:170,goalCal:2500,goalProtein:175};
+r=await app.fetch(new Request('https://server.workers.dev/api/progress',{method:'POST',headers,body:JSON.stringify(progress)}),env);assert.equal(r.status,200);
+r=await app.fetch(new Request('https://server.workers.dev/api/widget?profileId=123456789012',{headers:{'X-Widget-Key':'widget-test'}}),env);assert.equal((await r.json()).cal,1800);
+const oldFetch=globalThis.fetch;
+globalThis.fetch=async(request,options)=>new Response(JSON.stringify({output:[{content:[{type:'output_text',text:JSON.stringify({description:'Творог 200 г',cal:189,p:42,f:1,c:3,source:'этикетка',confidence:'high',notes:'Точность по этикетке'})}]}]}),{status:200,headers:{'Content-Type':'application/json'}});
+r=await app.fetch(new Request('https://server.workers.dev/api/analyze',{method:'POST',headers,body:JSON.stringify({description:'творог 200 г',photos:[],mealType:'Завтрак'})}),env);assert.equal(r.status,200);assert.equal((await r.json()).meal.p,42);
+globalThis.fetch=async(request,options)=>new Response(JSON.stringify({ok:true,result:{message_id:123}}),{status:200,headers:{'Content-Type':'application/json'}});
+r=await app.fetch(new Request('https://server.workers.dev/api/telegram',{method:'POST',headers,body:JSON.stringify({caption:'Обед: творог',mealId:'testmeal00001'})}),env);assert.equal((await r.json()).messageId,123);
+globalThis.fetch=oldFetch;
+console.log('Worker smoke tests: OK');
