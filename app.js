@@ -154,6 +154,21 @@ $('techBody').innerHTML=(local?.diagram||'')+(img?'<img class="tech-external-ima
 (!local&&!stored?btn('fetchExerciseGuide','Найти технику в интернете','outline'):'')+btn('helpClose','Закрыть','outline');
 box.classList.add('show');box.setAttribute('aria-hidden','false');$('helpClose').onclick=dismissTechnique;
 if(!local&&!stored){$('fetchExerciseGuide').onclick=()=>lookupExerciseGuide(name)}}
+
+async function lookupExerciseGuide(name){if(!config.url||!config.key)return toast('Для поиска техники сначала подключи сервер в Профиле');
+if(!confirm('Искать технику упражнения «'+name+'» в интернете через ИИ? Это отдельный платный запрос. Найденные материалы сначала будут показаны для подтверждения.'))return;
+const box=$('techBody');box.innerHTML='<p class="muted">Ищу инструкцию и изображения с подходящей лицензией…</p>';
+try{const resp=await api('/api/exercise-guide',{name,consent:true});recordAIUsage(resp.usage);const g=resp.guide||{},steps=Array.isArray(g.steps)?g.steps:[];if(!steps.length)throw Error('Нет инструкции');
+const safeUrl=v=>typeof v==='string'&&/^https:\/\//i.test(v),urls=(g.sources||[]).filter(safeUrl).slice(0,4),pic=typeof g.imageUrl==='string'&&/^https:\/\/(?:upload\.wikimedia\.org\/|commons\.wikimedia\.org\/wiki\/Special:FilePath\/)/i.test(g.imageUrl)?g.imageUrl:'';
+box.innerHTML='<p class="muted">Черновик исследования. Изображение и подсказки сохраняются только после твоего подтверждения.</p>'+ (pic?'<img class="tech-external-image" src="'+esc(pic)+'" alt="Найденное изображение упражнения" loading="lazy" referrerpolicy="no-referrer"><p class="muted">'+esc(g.imageCredit||'Требуется проверка лицензии')+'</p>':'<p class="s-note">Проверенного изображения с открытой лицензией не найдено — фото не добавлено.</p>')+
+'<ol class="tech-cues">'+steps.map(t=>'<li>'+esc(t)+'</li>').join('')+'</ol>'+
+(g.risks?.length?'<div class="caution">'+g.risks.map(x=>esc(x)).join('<br>')+'</div>':'')+
+(g.uncertainty?'<p class="muted">Ограничения: '+esc(g.uncertainty)+'</p>':'')+
+'<p class="muted">Источники: '+urls.map(v=>'<a href="'+esc(v)+'" target="_blank" rel="noopener noreferrer">Открыть ↗</a>').join(' · ')+'</p>'+
+'<div class="actions">'+btn('saveGuide','Сохранить инструкцию')+btn('discardGuide','Отмена','outline')+'</div>';
+$('saveGuide').onclick=()=>{if(!urls.length)return toast('Нет проверяемого источника. Не сохраняю инструкцию как проверенную.');let p=person();p.exerciseGuides=p.exerciseGuides||{};p.exerciseGuides[normalizeFood(name)]={cues:steps,risks:(g.risks||[]).slice(0,4),sources:urls,imageUrl:pic||'',imageCredit:g.imageCredit||'',verifiedByUser:true};save();openExerciseHelp(name);toast('Сохранено в базу упражнений · без новых запросов')};
+$('discardGuide').onclick=()=>openExerciseHelp(name);
+}catch(e){openExerciseHelp(name);toast('Поиск недоступен: '+e.message)}}
 function createWorkoutDraft(p){return{id:uid(),date:dateNow(),created:new Date().toISOString(),items:p.plan.map(x=>({id:x.id,name:x.name,weight:x.weight,sets:x.sets,targetReps:x.reps,done:Array.from({length:x.sets},()=>false),actual:Array.from({length:x.sets},()=>parseInt(x.reps,10)||10),rir:null,pain:false,comment:'',skipped:false})),feeling:'',effort:'moderate',steps:null}}
 const countDone=d=>d.items.reduce((a,x)=>a+x.done.filter(Boolean).length,0);
 const countPlanned=d=>d.items.reduce((a,x)=>a+x.sets,0);
