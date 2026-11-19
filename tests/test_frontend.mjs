@@ -16,7 +16,7 @@ assert.equal(list.find(x=>x.name.includes('Булгур')).grams,80);
 for(const f of list){assert.ok(f.source&&f.aliases.length>0);for(const key of ['cal','p','f','c'])assert.ok(Number.isFinite(f.per100[key])&&f.per100[key]>=0)}
 const start=app.indexOf('function parseProgramNotes('),end=app.indexOf('function importProgramNotes(',start);
 assert.ok(start>=0&&end>start);
-const names={uid:()=>String(Math.random()),dateNow:()=> '2026-11-19',String,Number};
+const names={uid:()=>String(Math.random()),dateNow:()=> '2026-11-19',num:x=>Number(String(x).replace(',','.')),String,Number};
 vm.runInNewContext(app.slice(start,end),names);
 let rows=names.parseProgramNotes('Жим ногами в гаке — 50 кг — 2×10\nЯгодичный мост — 25 кг — 2×12');
 assert.equal(rows.length,2);assert.equal(rows[0].weight,50);assert.equal(rows[1].sets,2);
