@@ -24,3 +24,7 @@ jobs:
         run: node tests/test_worker.mjs
       - name: Offline UI, diet and training regression checks
         run: node tests/test_frontend.mjs
+      - name: Simulated iPhone UI interaction tests
+        run: |
+          npm install --no-save --no-package-lock --ignore-scripts jsdom@26
+          node tests/test_dom.mjs
