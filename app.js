@@ -108,6 +108,7 @@ $('editProgram').onclick=editProgram;
 
 /* Paste a simple text workout plan from iPhone Notes; user confirms parsed weights before replacing plan. */
 function parseProgramNotes(raw){let out=[];for(let line of String(raw||'').split(/\r?\n/)){line=line.trim().replace(/^\s*(?:[0-9]{1,2}[.)]|[-*•])\s*/,'');if(!line||/^\s*(?:разминка|комментарий|итого|логика)\s*:/i.test(line))continue;
+ const columns=line.split(/\t+/);if(columns.length>=3){const match=columns[1].trim().match(/^(\d+)\s*\/\s*(\d+)/),w=Number(columns[2].trim().replace(',','.'));if(match&&columns[0].trim().length>=3){out.push({id:uid(),name:columns[0].trim(),weight:Number.isFinite(w)?w:0,sets:Number(match[1]),reps:match[2]});continue}}
  const weightMatch=line.match(/(\d+(?:[.,]\d+)?)\s*кг/i),setMatch=line.match(/(\d+)\s*[хx×*]\s*(\d+(?:\s*[-–]\s*\d+)?)/i);if(!weightMatch&&!setMatch)continue;
  const first=Math.min(weightMatch?.index??1e6,setMatch?.index??1e6);const name=line.slice(0,first).replace(/\s*[—–:;,]\s*$/,'').trim();if(name.length<3||name.length>90)continue;
  const sets=setMatch?Number(setMatch[1]):2,reps=setMatch?setMatch[2].replace(/\s+/g,''):'12',weight=weightMatch?num(weightMatch[1]):0;
