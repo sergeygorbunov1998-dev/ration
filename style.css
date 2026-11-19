@@ -206,3 +206,55 @@ body{min-height:100%;overflow-x:hidden;overscroll-behavior-x:none;}
  .manage-plan{font-size:11px;padding:8px;}
  #screen-workouts .section-row h2{font-size:17px;}
 }
+
+/* v6: Make the bottom bar a genuine app-shell row, not a fixed element attached
+   to Safari's dynamic visual viewport. Only the main content scrolls. */
+html,body{height:100%;overflow:hidden!important;overscroll-behavior:none;}
+body{margin:0;}
+#app.app{
+ height:100dvh!important;
+ min-height:0!important;
+ display:flex!important;
+ flex-direction:column!important;
+ overflow:hidden!important;
+ padding-bottom:0!important;
+}
+#app > .head{flex:0 0 auto;position:relative;}
+#app > main{
+ flex:1 1 auto;
+ min-height:0;
+ overflow-y:auto;
+ overflow-x:hidden;
+ -webkit-overflow-scrolling:touch;
+ overscroll-behavior-y:contain;
+ scrollbar-width:none;
+ padding-bottom:22px;
+}
+#app > main::-webkit-scrollbar{display:none;}
+#app > .tabbar{
+ position:relative!important;
+ inset:auto!important;
+ transform:none!important;
+ flex:0 0 auto!important;
+ align-self:stretch!important;
+ width:auto!important;
+ height:calc(56px + env(safe-area-inset-bottom,0px))!important;
+ min-height:56px!important;
+ margin-left:-17px!important;
+ margin-right:-17px!important;
+ display:grid!important;
+ grid-template-columns:repeat(5,minmax(0,1fr))!important;
+ justify-content:stretch!important;
+ align-items:start!important;
+ gap:0!important;
+ padding:1px 7px env(safe-area-inset-bottom,0px)!important;
+ box-sizing:border-box!important;
+ border-top:1px solid #2c3946;
+}
+#app > .tabbar button{height:54px!important;max-height:54px;align-self:start!important;}
+@media(max-width:390px){
+ #app > .tabbar{margin-left:-14px!important;margin-right:-14px!important;}
+}
+@supports not (height:100dvh){
+ #app.app{height:100vh!important;}
+}
