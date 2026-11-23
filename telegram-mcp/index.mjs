@@ -114,6 +114,7 @@ const pubTool={name:'publish_meal',title:'Опубликовать еду в к�
   calories:{type:'number',minimum:0,maximum:5000},protein:{type:'number',minimum:0,maximum:500},
   date:{type:'string',description:'YYYY-MM-DD по московскому времени (можно опустить: берётся текущая московская дата).'},
   photos:{type:'array',items:fileDef,maxItems:4,description:'Реальные фотографии пользователя, прикреплённые к беседе ChatGPT, до четырёх.'},
+  require_photo:{type:'boolean',description:'True, если пользователь прислал изображение и требует публикации именно с изображением; при потере файла сервер НЕ отправит пост только с текстом.'},
   idempotency_key:{type:'string',description:'Один устойчивый UUID для этого конкретного приёма пищи; повтор того же вызова не создаст новый пост.'}
  },required:['description','calories','protein']},
  annotations:{readOnlyHint:false,destructiveHint:false,openWorldHint:true,idempotentHint:false},
@@ -129,10 +130,12 @@ async function fetchPhoto(file){
  if(u.protocol!=='https:'||!isTrustedHost(u.hostname)||u.username||u.password)throw Error('Источник изображения не относится к доверенному хосту ChatGPT');
  const r=await fetch(u,{redirect:'error',signal:AbortSignal.timeout(20000)});
  if(!r.ok)throw Error('Не удалось загрузить оригинальное изображение из ChatGPT');
- const mime=String(r.headers.get('content-type')||file.mime_type||'').split(';')[0].toLowerCase();
- if(!['image/jpeg','image/png','image/webp'].includes(mime))throw Error('Формат изображения должен быть JPEG, PNG или WebP');
  const announced=Number(r.headers.get('content-length')||0);if(announced>9_000_000)throw Error('Изображение слишком большое (>9 MB)');
  const data=await r.arrayBuffer();if(data.byteLength>9_000_000)throw Error('Изображение слишком большое (>9 MB)');
+ const b=new Uint8Array(data),mime=b[0]===0xff&&b[1]===0xd8&&b[2]===0xff?'image/jpeg':
+  b[0]===0x89&&b[1]===0x50&&b[2]===0x4e&&b[3]===0x47?'image/png':
+  b[0]===0x52&&b[1]===0x49&&b[2]===0x46&&b[3]===0x46&&String.fromCharCode(...b.slice(8,12))==='WEBP'?'image/webp':null;
+ if(!mime)throw Error('Невалидное изображение: допускаются JPEG, PNG и WebP');
  return {mime,data:new Blob([data],{type:mime})};
 }
 async function telegram(env,method,body){
@@ -149,6 +152,7 @@ async function publish(args,env){
  if(!desc||!Number.isFinite(cal)||cal<0||cal>5000||!Number.isFinite(p)||p<0||p>500)throw Error('Проверь описание, калории и белок');
  const date=args.date?String(args.date):nowDate();if(!validDate(date))throw Error('Неверная дата');
  const files=Array.isArray(args.photos)?args.photos:[];
+ if(args.require_photo&&files.length===0)throw Error('Не получено прикреплённое изображение ChatGPT. Пост НЕ опубликован.');
  if(files.length>4)throw Error('Максимум четыре фотографии');
  const idem=String(args.idempotency_key||'').slice(0,100),dedupe=idem?'post:'+idem:null;
  if(dedupe){const old=await env.STATE.get(dedupe,'json');if(old)return {...old,repeated:true}}
@@ -159,12 +163,12 @@ async function publish(args,env){
  try{
   if(images.length===0)sent=await telegram(env,'sendMessage',{chat_id:env.TELEGRAM_CHAT_ID,text:post.msg});
   else if(images.length===1){
-   const f=new FormData();f.set('chat_id',env.TELEGRAM_CHAT_ID);f.set('photo',images[0].data,'meal.jpg');f.set('caption',caption);
+   const f=new FormData();f.set('chat_id',env.TELEGRAM_CHAT_ID);f.set('photo',images[0].data,'meal.'+(images[0].mime==='image/png'?'png':images[0].mime==='image/webp'?'webp':'jpg'))f.set('caption',caption);
    sent=await telegram(env,'sendPhoto',f);
   }else{
    const f=new FormData();f.set('chat_id',env.TELEGRAM_CHAT_ID);
    f.set('media',JSON.stringify(images.map((img,i)=>({type:'photo',media:'attach://photo'+i,...(i===0?{caption}: {})}))));
-   images.forEach((img,i)=>f.set('photo'+i,img.data,'meal'+i+'.jpg'));
+   images.forEach((img,i)=>f.set('photo'+i,img.data,'meal'+i+'.'+(img.mime==='image/png'?'png':img.mime==='image/webp'?'webp':'jpg')));
    sent=await telegram(env,'sendMediaGroup',f);
   }
   if(images.length&&post.msg.length>1024)await telegram(env,'sendMessage',{chat_id:env.TELEGRAM_CHAT_ID,text:post.msg.slice(1024)});
