@@ -1,0 +1,11 @@
+name = "ration-telegram"
+main = "telegram-bridge.mjs"
+compatibility_date = "2026-11-01"
+
+# Create or reuse a Cloudflare KV namespace, then set its real ID here.
+[[kv_namespaces]]
+binding = "PROGRESS"
+id = "REPLACE_WITH_YOUR_KV_NAMESPACE_ID"
+
+# Set secrets with "npx wrangler secret put SECRET_NAME" (see TELEGRAM_SETUP.md).
+# No keys, bot tokens, access IDs or owner credentials in this public file.
