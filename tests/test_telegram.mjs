@@ -23,7 +23,7 @@ const base='https://example.workers.dev/telegram/webhook';
 const createUpdate=(id,text,msgid)=>({update_id:msgid,message:{message_id:msgid,chat:{id,type:'private'},from:{id},text}});
 const webhook=(data,secret=env.TELEGRAM_WEBHOOK_SECRET)=>app.fetch(new Request(base,{method:'POST',headers:{'Content-Type':'application/json','X-Telegram-Bot-Api-Secret-Token':secret},body:JSON.stringify(data)}),env);
 const apiCalls=()=>calls.filter(x=>x.type==='api');
-const telegramCalls=(method,chat)=>calls.filter(x=>x.type==='telegram'&&x.method===method&&(!chat||x.body.chat_id===chat));
+const telegramCalls=(method,chat)=>calls.filter(x=>x.type==='telegram'&&x.method===method&&(!chat||String(x.body.chat_id)===String(chat)));
 const original=globalThis.fetch;
 globalThis.fetch=async(uri,args)=>{
  const url=String(uri);
