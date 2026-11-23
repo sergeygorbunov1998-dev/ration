@@ -34,3 +34,5 @@ jobs:
         run: node tests/test_telegram_bridge.mjs
       - name: Telegram intake and publication regression checks
         run: node tests/test_telegram.mjs
+      - name: ChatGPT direct photo publisher OAuth and media tests
+        run: node telegram-mcp/test.mjs
