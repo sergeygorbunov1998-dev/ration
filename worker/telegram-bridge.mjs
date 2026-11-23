@@ -35,7 +35,7 @@ const mealSchema={type:'object',additionalProperties:false,required:['title','ca
 async function estimate(env,description,fileId){
  const images=fileId?[{type:'input_image',image_url:await fetchPhoto(env,fileId),detail:'high'}]:[];
  const prompt='Оцени пищевую ценность приёма пищи по сообщению и фото. Верни строго JSON по схеме. Текст: '+description+'. Если вес неизвестен, явно напиши об оценке в notes. Не выдумывай точных масс, брендов и этикеток. Если точное КБЖУ на фото, читай его. Если в сообщении задан готовый/сухой вес, не путай. Если калории/белок неизвестны, предпочти осторожную оценку с пояснением. summary: короткое описание еды и граммовок для Telegram на русском, одна-две строки; никаких медицинских заявлений. Не учитывай овощи, если пользователь просил их не учитывать.';
- const resp=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:'Bearer '+env.OPENAI_API_KEY,'content-type':'application/json'},body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-6-luna',input:[{role:'user',content:[{type:'input_text',text:prompt},...images]}],reasoning:{effort:'low'},text:{format:{type:'json_schema',name:'meal_estimate',strict:true,schema:mealSchema}},max_output_tokens:1100})});
+ const resp=await fetch('https://api.openai.com/v1/responses',{method:'POST',headers:{authorization:'Bearer '+env.OPENAI_API_KEY,'content-type':'application/json'},body:JSON.stringify({model:env.OPENAI_MODEL||'gpt-5-mini',input:[{role:'user',content:[{type:'input_text',text:prompt},...images]}],reasoning:{effort:'low'},text:{format:{type:'json_schema',name:'meal_estimate',strict:true,schema:mealSchema}},max_output_tokens:1100})});
  const data=await resp.json().catch(()=>({}));if(!resp.ok)throw Error('OpenAI API error');
  const content=data.output_text||data.output?.flatMap(x=>x.content||[]).find(x=>x.type==='output_text')?.text;
  let result;try{result=JSON.parse(content)}catch{throw Error('Модель не вернула расчёт')}
@@ -46,7 +46,7 @@ const buttons=id=>({inline_keyboard:[[{text:'✅ Опубликовать в к�
 function preview(d){return '<b>Предпросмотр · '+escapeHtml(d.title)+'</b>\n'+escapeHtml(d.summary)+'\n\n'+d.cal+' ккал · '+d.protein+' г белка\nЖиры: '+d.fat+' г · Углеводы: '+d.carbs+' г'+(d.notes?'\n\n⚠️ '+escapeHtml(d.notes):'')+'\n\nПубликация только после подтверждения.';}
 async function prefs(env){
  const p=JSON.parse(await env.PROGRESS.get(kvKey('prefs',env.TELEGRAM_OWNER_ID))||'{}');
- return {cal:finite(p.cal,800,6000)?Number(p.cal):2350,protein:finite(p.protein,20,400)?Number(p.protein):175,weight:finite(p.weight,20,400)?Number(p.weight):84.8};
+ return {cal:finite(p.cal,800,6000)?Number(p.cal):2350,protein:finite(p.protein,20,400)?Number(p.protein):175,weight:finite(p.weight,20,400)?Number(p.weight):null};
 }
 async function setPrefs(env,changes){const p={...await prefs(env),...changes};await env.PROGRESS.put(kvKey('prefs',env.TELEGRAM_OWNER_ID),JSON.stringify(p));return p;}
 async function processMessage(env,msg){
