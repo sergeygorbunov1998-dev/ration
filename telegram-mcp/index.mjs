@@ -163,7 +163,7 @@ async function publish(args,env){
  try{
   if(images.length===0)sent=await telegram(env,'sendMessage',{chat_id:env.TELEGRAM_CHAT_ID,text:post.msg});
   else if(images.length===1){
-   const f=new FormData();f.set('chat_id',env.TELEGRAM_CHAT_ID);f.set('photo',images[0].data,'meal.'+(images[0].mime==='image/png'?'png':images[0].mime==='image/webp'?'webp':'jpg'))f.set('caption',caption);
+   const f=new FormData();f.set('chat_id',env.TELEGRAM_CHAT_ID);f.set('photo',images[0].data,'meal.'+(images[0].mime==='image/png'?'png':images[0].mime==='image/webp'?'webp':'jpg'));f.set('caption',caption);
    sent=await telegram(env,'sendPhoto',f);
   }else{
    const f=new FormData();f.set('chat_id',env.TELEGRAM_CHAT_ID);
