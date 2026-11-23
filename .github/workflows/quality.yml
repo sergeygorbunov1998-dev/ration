@@ -18,6 +18,7 @@ jobs:
           node --check app.js
           node --check sw.js
           node --check worker/index.js
+          node --check worker/telegram-bridge.mjs
           node --check exercise-guides.js
           node --check food-library.js
       - name: Worker API smoke test
@@ -28,3 +29,5 @@ jobs:
         run: |
           npm install --no-save --no-package-lock --ignore-scripts jsdom@26
           node tests/test_dom.mjs
+      - name: Telegram approval, privacy and publishing tests
+        run: node tests/test_telegram_bridge.mjs
