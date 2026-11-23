@@ -145,7 +145,7 @@ export async function handleTelegramWebhook(request,env,ctx={}){
  if(!m)return response();
  const {cmd,arg}=latinCommand(m.text||'');
  if(cmd==='/start'||cmd==='/help'||cmd==='/помощь'){
-  await tell(env,id,'Рацион+ · защищённый дневник\n\n1. Отправь описание еды и фотографии (до 12).\n2. Напиши /рассчитать — получишь КБЖУ и готовый пост с полосками прогресса.\n3. Проверь и нажми «Опубликовать в канал».\n\n/итог — баланс за сегодня\n/вес 84.8 — записать утренний вес\n/цель 2350 175 — изменить калории и белок\n/сброс — очистить текущий черновик\n\nБез подтверждения публикации не будет.');
+  await tell(env,id,'Рацион+ · защищённый дневник\n\n1. Отправь описание еды и фотографии (до 12).\n2. Напиши /рассчитать — получишь КБЖУ и готовый пост с полосками прогресса.\n3. Проверь и нажми «Опубликовать в канал».\n\n/итог — баланс за сегодня\n/поправить 500 40 15 50 — исправить КБЖУ черновика\n/вес 84.8 — записать утренний вес\n/цель 2350 175 — изменить калории и белок\n/сброс — очистить текущий черновик\n\nБез подтверждения публикации не будет.');
   return response()
  }
  if(cmd==='/итог'||cmd==='/status'){const d=await getDaily(env,id,days());const text='Сегодня: '+fmt(d.cal)+' / '+fmt(d.goalCal)+' ккал '+bars(d.cal,d.goalCal)+'\nБелок: '+fmt(d.p)+' / '+fmt(d.goalP)+' г '+bars(d.p,d.goalP);await tell(env,id,text);return response()}
@@ -159,6 +159,19 @@ export async function handleTelegramWebhook(request,env,ctx={}){
   await tell(env,id,'Новые цели: '+cal+' ккал и '+p+' г белка. История не изменена.');return response()
  }
  if(cmd==='/сброс'||cmd==='/clear'){const events=await getEntries(env,id);const last=events.at(-1)?.messageId;if(last)await env.PROGRESS.put(key('cutoff',id),String(last),{expirationTtl:60*60*24*120});await env.PROGRESS.delete(key('pending',id));await tell(env,id,'Черновик очищен, дневной баланс не изменён.');return response()}
+ if(cmd==='/поправить'||cmd==='/correct'){
+  const values=arg.split(/\s+/).map(x=>Number(x.replace(',','.')));
+  if(values.length!==4||values.some(v=>!Number.isFinite(v)||v<0||v>10000)){
+    await tell(env,id,'Формат: /поправить 500 40 15 50 — калории, белок, жиры, углеводы.');return response();
+  }
+  const p=await get(env.PROGRESS,key('pending',id));
+  if(!p||p.status!=='ready'){await tell(env,id,'Сначала /рассчитать — затем можно поправить значения.');return response()}
+  [p.meal.cal,p.meal.p,p.meal.f,p.meal.c]=values;
+  p.notes='КБЖУ вручную исправлены пользователем. Убедись, что данные верны.';
+  const d=await getDaily(env,id,p.date);p.body=formatChannelPost(p.meal,afterTotals(d,p.meal),p.date);
+  await put(env.PROGRESS,key('pending',id),p,7200);
+  await tell(env,id,previewText(p),{reply_markup:approvalButtons(p)});return response();
+ }
  if(cmd==='/рассчитать'||cmd==='/analyze'){await preview(env,id,ctx);return response()}
  if(cmd.startsWith('/')){await tell(env,id,'Неизвестная команда. Нажми /help');return response()}
  await saveEntry(env,id,m);
