@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import app from '../worker/index.js';
 import {formatChannelPost} from '../worker/telegram-bot.mjs';
 
-const now='2026-11-23';
+const now=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Moscow',year:'numeric',month:'2-digit',day:'2-digit'}).format(new Date());
 const kvStore=new Map(), calls=[];
 const kv={
  async get(k){return kvStore.get(k)||null},
@@ -65,7 +65,7 @@ try{
  const sent=telegramCalls('sendMessage','@demo_channel')[0].body.text;
  assert.match(sent,/380 ккал/);
  assert.match(sent,/28 г белка/);
- assert.match(sent,/2 350/);
+ assert.match(sent,/2[\s\u00a0\u202f]350/);
  const dayKey='tg:day:10001:'+now;
  const tracked=JSON.parse(kvStore.get(dayKey));
  assert.equal(tracked.cal,380);assert.equal(tracked.p,28);
