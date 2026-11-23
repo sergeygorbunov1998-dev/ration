@@ -141,6 +141,8 @@ export async function handleTelegramWebhook(request,env,ctx={}){
  const from=q?.from||m?.from,chat=q?.message?.chat||m?.chat;
  if(!owner(from,env,chat))return response();
  const id=String(from.id);
+ const updateId=Number(update.update_id);
+ if(Number.isSafeInteger(updateId)&&updateId>=0){const updateKey=key('seen',updateId);if(await env.PROGRESS.get(updateKey))return response();await env.PROGRESS.put(updateKey,'1',{expirationTtl:86400})}
  if(q){await callback(env,id,q);return response()}
  if(!m)return response();
  const {cmd,arg}=latinCommand(m.text||'');
@@ -172,7 +174,7 @@ export async function handleTelegramWebhook(request,env,ctx={}){
   await put(env.PROGRESS,key('pending',id),p,7200);
   await tell(env,id,previewText(p),{reply_markup:approvalButtons(p)});return response();
  }
- if(cmd==='/рассчитать'||cmd==='/analyze'){await preview(env,id,ctx);return response()}
+ if(cmd==='/рассчитать'||cmd==='/analyze'){const lock=key('analysis-lock',id);if(await env.PROGRESS.get(lock)){await tell(env,id,'Анализ уже запускался недавно. Чтобы избежать лишних расходов, попробуй через 20 секунд.');return response()}await env.PROGRESS.put(lock,'1',{expirationTtl:20});await preview(env,id,ctx);return response()}
  if(cmd.startsWith('/')){await tell(env,id,'Неизвестная команда. Нажми /help');return response()}
  await saveEntry(env,id,m);
  await tell(env,id,'Добавлено к черновику. Если всё отправлено, нажми /рассчитать. Пока ничего не опубликовано.');
