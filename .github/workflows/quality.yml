@@ -18,6 +18,7 @@ jobs:
           node --check app.js
           node --check sw.js
           node --check worker/index.js
+          node --check worker/telegram-bot.mjs
           node --check worker/telegram-bridge.mjs
           node --check exercise-guides.js
           node --check food-library.js
@@ -31,3 +32,5 @@ jobs:
           node tests/test_dom.mjs
       - name: Telegram approval, privacy and publishing tests
         run: node tests/test_telegram_bridge.mjs
+      - name: Telegram intake and publication regression checks
+        run: node tests/test_telegram.mjs
