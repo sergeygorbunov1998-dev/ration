@@ -117,7 +117,7 @@ const pubTool={name:'publish_meal',title:'Опубликовать еду в к�
   require_photo:{type:'boolean',description:'True, если пользователь прислал изображение и требует публикации именно с изображением; при потере файла сервер НЕ отправит пост только с текстом.'},
   idempotency_key:{type:'string',description:'Один устойчивый UUID для этого конкретного приёма пищи; повтор того же вызова не создаст новый пост.'}
  },required:['description','calories','protein']},
- annotations:{readOnlyHint:false,destructiveHint:false,openWorldHint:true,idempotentHint:false},
+ annotations:{readOnlyHint:false,destructiveHint:true,openWorldHint:true,idempotentHint:false},
  _meta:{'openai/fileParams':['photos'],'openai/toolInvocation/invoking':'Публикую приём пищи в Telegram','openai/toolInvocation/invoked':'Проверил результат публикации'},
  securitySchemes:[{type:'oauth2',scopes:['telegram:publish']}]
 };
